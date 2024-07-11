@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Config/etc/email_templates.xsd">
+    <template id="coupon_usage_notification" label="Coupon Usage Notification" file="coupon_usage_notification.html" type="html" area="frontend" module="MichaelHarper_CouponUsageCommunicator"/>
+</config>

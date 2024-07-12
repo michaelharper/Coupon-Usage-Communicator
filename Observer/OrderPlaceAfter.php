@@ -58,6 +58,15 @@ class OrderPlaceAfter implements ObserverInterface
 
             $coupon = $this->coupon->loadByCode($couponCode);
             $rule = $this->ruleFactory->create()->load($coupon->getRuleId());
+            $ruleName = $rule->getName() ?? 'N/A';
+
+            $templateVars = [
+                'order' => $order,
+                'couponCode' => $couponCode ?? 'N/A',
+                'orderIncrementId' => $order->getIncrementId() ?? 'N/A',
+                'customerName' => $order->getCustomerName() ?? 'Valued Customer',
+                'ruleName' => $ruleName
+            ];
 
             $emails = $rule->getData('coupon_usage_communicator_emails');
 
@@ -77,39 +86,56 @@ class OrderPlaceAfter implements ObserverInterface
 
             // Log the variables before sending the email
             $this->logger->info('Template variables: ' . json_encode([
+                    'order' => $order,
                     'orderIncrementId' => $order->getIncrementId(),
                     'couponCode' => $couponCode,
-                    'customerName' => $order->getCustomerName()
+                    'customerName' => $order->getCustomerName(),
+                    'ruleName' => $ruleName,
                 ]));
 
             foreach ($emailsArray as $email) {
                 try {
                     $this->logger->info('Template variables: ' . json_encode([
+                            'order' => $order,
                             'orderIncrementId' => $order->getIncrementId(),
                             'couponCode' => $couponCode,
-                            'customerName' => $order->getCustomerName()
+                            'customerName' => $order->getCustomerName(),
+                            'ruleName' => $ruleName,
                         ]));
+
+                    $subjectVars = [
+                        'incrementId' => $order->getIncrementId() ?? 'N/A',
+                        'couponCode' => $couponCode ?? 'N/A'
+                    ];
+
+                    $subject = __('New order %1 placed with coupon %2', $subjectVars['incrementId'], $subjectVars['couponCode']);
+
+                    $requiredVars = ['orderIncrementId', 'couponCode', 'customerName', 'ruleName'];
+                    foreach ($requiredVars as $var) {
+                        if (!isset($templateVars[$var]) || $templateVars[$var] === null) {
+                            $this->logger->warning("Required variable '$var' is null or not set. Setting default value.");
+                            $templateVars[$var] = 'N/A';
+                        }
+                    }
 
                     $transport = $this->transportBuilder
                         ->setTemplateIdentifier('coupon_usage_notification')
                         ->setTemplateOptions([
                             'area' => 'frontend',
-                            'store' => $this->storeManager->getStore()->getId()
+                            'store' => $this->storeManager->getStore()->getId(),
+                            'subject' => $subject  // Set the subject here
                         ])
-                        ->setTemplateVars([
-                            'orderIncrementId' => $order->getIncrementId(),
-                            'couponCode' => $couponCode,
-                            'customerName' => $order->getCustomerName()
-                        ])
+                        ->setTemplateVars($templateVars)
                         ->setFrom('general')
-                        ->addTo(trim($email))
-                        ->getTransport();
+                        ->addTo(trim($email));
 
-                    $transport->sendMessage();
+                    $this->logger->info('About to send email to: ' . $email);
+                    $transport->getTransport()->sendMessage();
                     $this->logger->info('Email sent successfully to: ' . $email);
 
                 } catch (\Exception $e) {
                     $this->logger->error('Failed to send email to ' . $email . '. Error: ' . $e->getMessage());
+                    $this->logger->error($e->getTraceAsString());
                 }
             }
 

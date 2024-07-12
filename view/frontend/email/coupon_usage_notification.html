@@ -1,7 +1,9 @@
 {{template config_path="design/email/header_template"}}
 
-<p>{{trans "Order %incrementId has been placed using coupon %couponCode" incrementId=$orderIncrementId couponCode=$couponCode}}</p>
+<p>{{trans "Order %incrementId has been placed using coupon %couponCode" incrementId=$orderIncrementId|default:'N/A' couponCode=$couponCode|default:'N/A'}}</p>
 
-<p>{{trans "Customer Name: %name" name=$customerName}}</p>
+<p>{{trans "Customer Name: %name" name=$customerName|default:'Valued Customer'}}</p>
+
+<p>{{trans "Coupon Rule: %ruleName" ruleName=$ruleName|default:'N/A'}}</p>
 
 {{template config_path="design/email/footer_template"}}

@@ -1,8 +1,7 @@
-<html>
-<body>
-<p>Coupon Code Used: {{var order.getCouponCode()}}</p>
-<p>Order ID: {{var order.getIncrementId()}}</p>
-<p>Customer Email: {{var order.getCustomerEmail()}}</p>
-<p>Order Total: {{var order.getGrandTotal()}}</p>
-</body>
-</html>
+{{template config_path="design/email/header_template"}}
+
+<p>{{trans "Order %incrementId has been placed using coupon %couponCode" incrementId=$orderIncrementId couponCode=$couponCode}}</p>
+
+<p>{{trans "Customer Name: %name" name=$customerName}}</p>
+
+{{template config_path="design/email/footer_template"}}

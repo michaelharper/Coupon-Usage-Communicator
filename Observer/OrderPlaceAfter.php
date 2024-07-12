@@ -108,7 +108,14 @@ class OrderPlaceAfter implements ObserverInterface
                         'couponCode' => $couponCode ?? 'N/A'
                     ];
 
-                    $subject = __('New order %1 placed with coupon %2', $subjectVars['incrementId'], $subjectVars['couponCode']);
+                    $incrementId = $order->getIncrementId() ?? 'N/A';
+                    $couponCodeForSubject = $couponCode ?? 'N/A';
+
+                    $subject = __('New order %1 placed with coupon %2', $incrementId, $couponCodeForSubject);
+
+                    // Log the subject and its components for debugging
+                    $this->logger->info("Preparing email subject. Order ID: $incrementId, Coupon: $couponCodeForSubject");
+                    $this->logger->info("Generated subject: $subject");
 
                     $requiredVars = ['orderIncrementId', 'couponCode', 'customerName', 'ruleName'];
                     foreach ($requiredVars as $var) {
@@ -122,15 +129,27 @@ class OrderPlaceAfter implements ObserverInterface
                         ->setTemplateIdentifier('coupon_usage_notification')
                         ->setTemplateOptions([
                             'area' => 'frontend',
-                            'store' => $this->storeManager->getStore()->getId(),
-                            'subject' => $subject  // Set the subject here
+                            'store' => $this->storeManager->getStore()->getId()
                         ])
                         ->setTemplateVars($templateVars)
                         ->setFrom('general')
-                        ->addTo(trim($email));
+                        ->addTo(trim($email))
+                        ->getTransport();
+
+                    // Check if setSubject method exists (for compatibility with different Magento versions)
+//                    if (method_exists($this->transportBuilder, 'setSubject')) {
+//                        $transport = $transport->setSubject($subject);
+//                    } else {
+//                        // If setSubject doesn't exist, try to set it in template options
+//                        $transport = $this->transportBuilder->setTemplateOptions([
+//                            'area' => 'frontend',
+//                            'store' => $this->storeManager->getStore()->getId(),
+//                            'subject' => $subject
+//                        ]);
+//                    }
 
                     $this->logger->info('About to send email to: ' . $email);
-                    $transport->getTransport()->sendMessage();
+                    $transport->sendMessage();
                     $this->logger->info('Email sent successfully to: ' . $email);
 
                 } catch (\Exception $e) {

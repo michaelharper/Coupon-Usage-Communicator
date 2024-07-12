@@ -10,6 +10,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\SalesRule\Model\RuleFactory;
 use Magento\SalesRule\Model\Coupon;
 use Psr\Log\LoggerInterface;
+use Magento\Framework\Escaper;
 
 class OrderPlaceAfter implements ObserverInterface
 {
@@ -19,6 +20,7 @@ class OrderPlaceAfter implements ObserverInterface
     protected $transportBuilder;
     protected $storeManager;
     protected $logger;
+    protected $escaper;
 
     public function __construct(
         RuleFactory $ruleFactory,
@@ -26,7 +28,8 @@ class OrderPlaceAfter implements ObserverInterface
         ScopeConfigInterface $scopeConfig,
         TransportBuilder $transportBuilder,
         StoreManagerInterface $storeManager,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        Escaper $escaper
     ) {
         $this->ruleFactory = $ruleFactory;
         $this->coupon = $coupon;
@@ -34,6 +37,7 @@ class OrderPlaceAfter implements ObserverInterface
         $this->transportBuilder = $transportBuilder;
         $this->storeManager = $storeManager;
         $this->logger = $logger;
+        $this->escaper = $escaper;
     }
 
     public function execute(Observer $observer)
@@ -62,10 +66,10 @@ class OrderPlaceAfter implements ObserverInterface
 
             $templateVars = [
                 'order' => $order,
-                'couponCode' => $couponCode ?? 'N/A',
-                'orderIncrementId' => $order->getIncrementId() ?? 'N/A',
-                'customerName' => $order->getCustomerName() ?? 'Valued Customer',
-                'ruleName' => $ruleName
+                'couponCode' => $this->escaper->escapeHtml($couponCode ?? 'N/A'),
+                'orderIncrementId' => $this->escaper->escapeHtml($order->getIncrementId() ?? 'N/A'),
+                'customerName' => $this->escaper->escapeHtml($order->getCustomerName() ?? 'Valued Customer'),
+                'ruleName' => $this->escaper->escapeHtml($ruleName ?? 'N/A')
             ];
 
             $emails = $rule->getData('coupon_usage_communicator_emails');
@@ -129,7 +133,8 @@ class OrderPlaceAfter implements ObserverInterface
                         ->setTemplateIdentifier('coupon_usage_notification')
                         ->setTemplateOptions([
                             'area' => 'frontend',
-                            'store' => $this->storeManager->getStore()->getId()
+                            'store' => $this->storeManager->getStore()->getId(),
+                            'subject' => $subject  // Add the subject here
                         ])
                         ->setTemplateVars($templateVars)
                         ->setFrom('general')

@@ -1,11 +1,11 @@
+<!--@subject New order {{var orderIncrementId}} placed with coupon {{var couponCode}} @-->
+
 {{template config_path="design/email/header_template"}}
 
-<p>New order {{var orderIncrementId}} placed with coupon {{var couponCode}}</p>
+<p>{{trans "Order %incrementId has been placed using coupon %couponCode" incrementId=$orderIncrementId couponCode=$couponCode}}</p>
 
-<p>Order {{var orderIncrementId}} has been placed using coupon {{var couponCode}}</p>
+<p>{{trans "Customer Name: %name" name=$customerName}}</p>
 
-<p>Customer Name: {{var customerName}}</p>
-
-<p>Coupon Rule: {{var ruleName}}</p>
+<p>{{trans "Coupon Rule: %ruleName" ruleName=$ruleName}}</p>
 
 {{template config_path="design/email/footer_template"}}

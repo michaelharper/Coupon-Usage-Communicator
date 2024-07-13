@@ -11,6 +11,7 @@ use Magento\SalesRule\Model\RuleFactory;
 use Magento\SalesRule\Model\Coupon;
 use Psr\Log\LoggerInterface;
 use Magento\Framework\Escaper;
+use MichaelHarper\CouponUsageCommunicator\Logger\Logger;
 
 class OrderPlaceAfter implements ObserverInterface
 {
@@ -28,7 +29,7 @@ class OrderPlaceAfter implements ObserverInterface
         ScopeConfigInterface $scopeConfig,
         TransportBuilder $transportBuilder,
         StoreManagerInterface $storeManager,
-        LoggerInterface $logger,
+        Logger $logger,
         Escaper $escaper
     ) {
         $this->ruleFactory = $ruleFactory;
@@ -40,13 +41,37 @@ class OrderPlaceAfter implements ObserverInterface
         $this->escaper = $escaper;
     }
 
+    protected function isLoggingEnabled()
+    {
+        return $this->scopeConfig->isSetFlag('sales/coupon_communicator/enable_logging', ScopeInterface::SCOPE_STORE);
+    }
+
+    protected function log($message, $level = 'info')
+    {
+        if ($this->isLoggingEnabled()) {
+            switch ($level) {
+                case 'error':
+                    $this->logger->error($message);
+                    break;
+                case 'critical':
+                    $this->logger->critical($message);
+                    break;
+                case 'warning':
+                    $this->logger->warning($message);
+                    break;
+                default:
+                    $this->logger->info($message);
+            }
+        }
+    }
+
     public function execute(Observer $observer)
     {
         try {
-            $this->logger->info('OrderPlaceAfter observer triggered');
+            $this->log('OrderPlaceAfter observer triggered');
 
             if (!$this->scopeConfig->isSetFlag('sales/coupon_communicator/enable', ScopeInterface::SCOPE_STORE)) {
-                $this->logger->info('Coupon Usage Communicator is disabled');
+                $this->log('Coupon Usage Communicator is disabled');
                 return;
             }
 
@@ -54,11 +79,11 @@ class OrderPlaceAfter implements ObserverInterface
             $couponCode = $order->getCouponCode();
 
             if (!$couponCode) {
-                $this->logger->info('No coupon code used in this order');
+                $this->log('No coupon code used in this order');
                 return;
             }
 
-            $this->logger->info('Coupon code used: ' . $couponCode);
+            $this->log('Coupon code used: ' . $couponCode);
 
             $coupon = $this->coupon->loadByCode($couponCode);
             $rule = $this->ruleFactory->create()->load($coupon->getRuleId());
@@ -75,21 +100,21 @@ class OrderPlaceAfter implements ObserverInterface
             $emails = $rule->getData('coupon_usage_communicator_emails');
 
             if (empty($emails)) {
-                $this->logger->info('No emails configured for this coupon rule');
+                $this->log('No emails configured for this coupon rule');
                 return;
             }
 
-            $this->logger->info('Emails configured for this coupon: ' . $emails);
+            $this->log('Emails configured for this coupon: ' . $emails);
 
             $emailsArray = is_string($emails) ? explode(',', $emails) : [];
 
             if (empty($emailsArray)) {
-                $this->logger->info('No valid emails found after parsing');
+                $this->log('No valid emails found after parsing');
                 return;
             }
 
             // Log the variables before sending the email
-            $this->logger->info('Template variables: ' . json_encode([
+            $this->log('Template variables: ' . json_encode([
                     'order' => $order,
                     'orderIncrementId' => $order->getIncrementId(),
                     'couponCode' => $couponCode,
@@ -99,7 +124,7 @@ class OrderPlaceAfter implements ObserverInterface
 
             foreach ($emailsArray as $email) {
                 try {
-                    $this->logger->info('Template variables: ' . json_encode([
+                    $this->log('Template variables: ' . json_encode([
                             'order' => $order,
                             'orderIncrementId' => $order->getIncrementId(),
                             'couponCode' => $couponCode,
@@ -118,13 +143,13 @@ class OrderPlaceAfter implements ObserverInterface
                     $subject = __('New order %1 placed with coupon %2', $incrementId, $couponCodeForSubject);
 
                     // Log the subject and its components for debugging
-                    $this->logger->info("Preparing email subject. Order ID: $incrementId, Coupon: $couponCodeForSubject");
-                    $this->logger->info("Generated subject: $subject");
+                    $this->log("Preparing email subject. Order ID: $incrementId, Coupon: $couponCodeForSubject");
+                    $this->log("Generated subject: $subject");
 
                     $requiredVars = ['orderIncrementId', 'couponCode', 'customerName', 'ruleName'];
                     foreach ($requiredVars as $var) {
                         if (!isset($templateVars[$var]) || $templateVars[$var] === null) {
-                            $this->logger->warning("Required variable '$var' is null or not set. Setting default value.");
+                            $this->log("Required variable '$var' is null or not set. Setting default value.", 'warning');
                             $templateVars[$var] = 'N/A';
                         }
                     }
@@ -153,20 +178,20 @@ class OrderPlaceAfter implements ObserverInterface
 //                        ]);
 //                    }
 
-                    $this->logger->info('About to send email to: ' . $email);
+                    $this->log('About to send email to: ' . $email);
                     $transport->sendMessage();
-                    $this->logger->info('Email sent successfully to: ' . $email);
+                    $this->log('Email sent successfully to: ' . $email);
 
                 } catch (\Exception $e) {
-                    $this->logger->error('Failed to send email to ' . $email . '. Error: ' . $e->getMessage());
-                    $this->logger->error($e->getTraceAsString());
+                    $this->log('Failed to send email to ' . $email . '. Error: ' . $e->getMessage(), 'error');
+                    $this->log($e->getTraceAsString(), 'error');
                 }
             }
 
 
         } catch (\Exception $e) {
-            $this->logger->critical('Exception in OrderPlaceAfter observer: ' . $e->getMessage());
-            $this->logger->critical($e->getTraceAsString());
+            $this->log('Exception in OrderPlaceAfter observer: ' . $e->getMessage(), 'critical');
+            $this->log($e->getTraceAsString(), 'critical');
             // Don't re-throw the exception, as this would prevent the order from being placed
         }
     }

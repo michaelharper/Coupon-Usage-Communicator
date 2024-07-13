@@ -11,18 +11,19 @@
             <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
         </arguments>
     </type>
-    <virtualType name="MichaelHarperCouponUsageCommunicatorLogger" type="Magento\Framework\Logger\Monolog">
+
+    <type name="MichaelHarper\CouponUsageCommunicator\Logger\Logger">
         <arguments>
             <argument name="name" xsi:type="string">couponUsageCommunicator</argument>
-            <argument name="handlers" xsi:type="array">
-                <item name="couponUsageCommunicatorHandler" xsi:type="object">MichaelHarper\CouponUsageCommunicator\Logger\Handler</item>
+            <argument name="handlers"  xsi:type="array">
+                <item name="system" xsi:type="object">MichaelHarper\CouponUsageCommunicator\Logger\Handler</item>
             </argument>
         </arguments>
-    </virtualType>
+    </type>
 
     <type name="MichaelHarper\CouponUsageCommunicator\Observer\OrderPlaceAfter">
         <arguments>
-            <argument name="logger" xsi:type="object">MichaelHarperCouponUsageCommunicatorLogger</argument>
+            <argument name="logger" xsi:type="object">MichaelHarper\CouponUsageCommunicator\Logger\Logger</argument>
         </arguments>
     </type>
 

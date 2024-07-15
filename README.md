@@ -2,9 +2,20 @@
 
 This extension allows Magento 2 store owners to communicate coupon usage via email. It integrates seamlessly with the Magento 2 sales rule configuration, providing an additional option to send email notifications upon coupon usage.
 
+## Screenshots
+
+### Store Configuration > Sales > Sales > Coupon Usage Communicator
+![Store Configuration UI](images/CouponUsageCommunicator_SalesConfigUI.jpg)
+
+### Cart Rule UI Additions
+![Cart Rule UI Additions](images/CouponUsageCommunicator_CartRuleUI.jpg)
+
+### Email Alerts
+![Email Alerts](images/CouponUsageCommunicator_Email.jpg)
+
 ## Requirements
 
-- Magento 2.3.x or later
+- Magento 2.4.x or later
 - PHP 7.3 or later
 - Access to the server command line
 

@@ -88,7 +88,7 @@ By following these steps, you will have successfully configured the Coupon Usage
 
 If you find Couon Usage Communicator useful and would like to support its development, consider making a donation:
 
-- **Buy Me a Coffee:** Support on [Buy Me a Coffee](https://buymeacoffee.com/michaelharper)
+<a href="https://www.buymeacoffee.com/michaelharper" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
 ## License
 
